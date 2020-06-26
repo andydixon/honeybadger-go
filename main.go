@@ -4,21 +4,26 @@ import (
 	"crypto/tls"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/pborman/getopt/v2"
 	"honeybadger/randomdata"
 	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
 func main() {
+	targetUrl := getopt.StringLong("url", 'u', "", "URL to attack")
+	getopt.Parse()
+
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
-	_, err := url.ParseRequestURI("https://brx3gcagx5fvwgnrzukbefb48drf2.textslocal.com/")
+	_, err := url.ParseRequestURI(*targetUrl)
 	if err != nil {
 		panic(err)
 	} else {
-		res, err := http.Get("https://brx3gcagx5fvwgnrzukbefb48drf2.textslocal.com/")
+		res, err := http.Get(*targetUrl)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -33,7 +38,7 @@ func main() {
 			log.Fatal(err)
 		}
 		iter := 0
-		for iter < 100000 {
+		for {
 			iter++
 
 			// Find the review items
@@ -42,9 +47,11 @@ func main() {
 				formMethod, _ := s.Attr("method")
 				formTarget, _ := s.Attr("action")
 				//fmt.Printf("Form method %s - target is %s\n", formMethod, formTarget)
-				target, _ := url.Parse("https://brx3gcagx5fvwgnrzukbefb48drf2.textslocal.com/")
+				target, _ := url.Parse(*targetUrl)
 				finalTarget, _ := target.Parse(formTarget)
-				fmt.Printf("Parsed URL: %s\n", finalTarget.String())
+				if iter == 1 {
+					fmt.Println("Form Target (" + formMethod + "): " + finalTarget.String())
+				}
 				params := url.Values{}
 				s.Find("input").Each(func(i int, element *goquery.Selection) {
 					inputType, _ := element.Attr("type")
@@ -52,7 +59,9 @@ func main() {
 					inputName, _ := element.Attr("name")
 
 					//title := s.Find("i").Text()
-					//fmt.Printf("Element %s is a %s - %s\n", inputName, inputType, inputValue)
+					if iter == 1 {
+						fmt.Printf("Element %s is a %s - %s\n", inputName, inputType, inputValue)
+					}
 					if inputType == "password" {
 						// Generate a random string as a password
 						params.Add(inputName, randomdata.RandStringRunes(rand.Intn(4)+8))
@@ -73,7 +82,7 @@ func main() {
 						params.Add(inputName, inputValue)
 					}
 				}) // End of each input field
-				fmt.Println(params.Encode())
+
 				body := strings.NewReader(params.Encode())
 				req, err := http.NewRequest(formMethod, finalTarget.String(), body)
 				if err != nil {
@@ -81,11 +90,9 @@ func main() {
 				}
 				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 				req.Header.Set("User-Agent", randomdata.UserAgentString())
-
-				resp, err := http.DefaultClient.Do(req)
-				if err != nil {
-					// handle err
-				}
+				fmt.Print("Hit " + strconv.Itoa(iter) + ": ")
+				resp, _ := http.DefaultClient.Do(req)
+				fmt.Print(strconv.Itoa(resp.StatusCode) + "(" + resp.Status + ") " + string(rune(27)) + "[K")
 				defer resp.Body.Close()
 			}) // End of each form
 		}
