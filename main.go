@@ -90,7 +90,8 @@ func main() {
 				}
 				req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 				req.Header.Set("User-Agent", randomdata.UserAgentString())
-				fmt.Print("Hit " + strconv.Itoa(iter) + ": ")
+				req.Header.Set("Referer", *targetUrl)
+				fmt.Print("\rHit " + strconv.Itoa(iter) + ": ")
 				resp, _ := http.DefaultClient.Do(req)
 				fmt.Print(strconv.Itoa(resp.StatusCode) + "(" + resp.Status + ") " + string(rune(27)) + "[K")
 				defer resp.Body.Close()
