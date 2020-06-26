@@ -1,9 +1,10 @@
 package main
 
 import (
-	"anasazi-master/randomdata"
+	"crypto/tls"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"honeybadger/randomdata"
 	"log"
 	"math/rand"
 	"net/http"
@@ -11,11 +12,8 @@ import (
 	"strings"
 )
 
-type Trenchfoot struct {
-}
-
 func main() {
-
+	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	_, err := url.ParseRequestURI("https://brx3gcagx5fvwgnrzukbefb48drf2.textslocal.com/")
 	if err != nil {
 		panic(err)
