@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"strconv"
 	"strings"
+	"os"
 )
 
 func main() {
@@ -21,7 +22,8 @@ func main() {
 	http.DefaultTransport.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	_, err := url.ParseRequestURI(*targetUrl)
 	if err != nil {
-		panic(err)
+		log.Fatal("There was an error parsing the URL. Please ensure the target URL is passed with -url <url>")
+		os.Exit(1)
 	} else {
 		res, err := http.Get(*targetUrl)
 		if err != nil {
